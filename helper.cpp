@@ -18,7 +18,7 @@
 #define DEFINE_STRUCT(name,wrapped_type,member_name) \
 struct _##name { \
 	_##name(wrapped_type member_name) \
-		: member_name(member_name) {} \
+		: member_name(std::move(member_name)) {} \
 	wrapped_type member_name; \
 };
 
@@ -227,7 +227,11 @@ int exiv2_image_get_pixel_height(Exiv2Image *img) {
 const unsigned char* exiv2_image_icc_profile(Exiv2Image *img)
 {
 	if (img->image->iccProfileDefined()) {
+#if EXIV2_TEST_VERSION(0,28,0)
+		return img->image->iccProfile().data();
+#else
 		return img->image->iccProfile()->pData_;
+#endif
 	}
 	return NULL;
 }
@@ -235,7 +239,11 @@ const unsigned char* exiv2_image_icc_profile(Exiv2Image *img)
 long exiv2_image_icc_profile_size(Exiv2Image *img)
 {
 	if (img->image->iccProfileDefined()) {
+#if EXIV2_TEST_VERSION(0,28,0)
+		return img->image->iccProfile().size();
+#else
 		return img->image->iccProfile()->size_;
+#endif
 	}
 	return 0;
 }
