@@ -228,7 +228,7 @@ const unsigned char* exiv2_image_icc_profile(Exiv2Image *img)
 {
 	if (img->image->iccProfileDefined()) {
 #if EXIV2_TEST_VERSION(0,28,0)
-		return img->image->iccProfile().data();
+		return img->image->iccProfile().c_data();
 #else
 		return img->image->iccProfile()->pData_;
 #endif
