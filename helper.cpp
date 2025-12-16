@@ -1,9 +1,19 @@
 #include "helper.h"
 
-#include <exiv2/image.hpp>
-#include <exiv2/error.hpp>
+#include <exiv2/exiv2.hpp>
 
 #include <stdio.h>
+
+// Compatibility for exiv2 0.28+
+#if EXIV2_TEST_VERSION(0,28,0)
+    typedef Exiv2::Image::UniquePtr Exiv2ImagePtr;
+    typedef Exiv2::Value::UniquePtr Exiv2ValuePtr;
+    #define EXIV2_ERROR_CODE(e) static_cast<int>(e.code())
+#else
+    typedef Exiv2::Image::AutoPtr Exiv2ImagePtr;
+    typedef Exiv2::Value::AutoPtr Exiv2ValuePtr;
+    #define EXIV2_ERROR_CODE(e) e.code()
+#endif
 
 #define DEFINE_STRUCT(name,wrapped_type,member_name) \
 struct _##name { \
@@ -19,7 +29,7 @@ void name##_free(type x) \
 }
 
 DEFINE_STRUCT(Exiv2ImageFactory, Exiv2::ImageFactory*, factory);
-DEFINE_STRUCT(Exiv2Image, Exiv2::Image::AutoPtr, image);
+DEFINE_STRUCT(Exiv2Image, Exiv2ImagePtr, image);
 
 DEFINE_STRUCT(Exiv2XmpData, const Exiv2::XmpData&, data);
 DEFINE_STRUCT(Exiv2XmpDatum, const Exiv2::Xmpdatum&, datum);
@@ -57,7 +67,7 @@ struct _Exiv2Error {
 };
 
 _Exiv2Error::_Exiv2Error(const Exiv2::Error &error)
-	: code(error.code())
+	: code(EXIV2_ERROR_CODE(error))
 	, what(strdup(error.what()))
 {
 }
@@ -119,7 +129,7 @@ exiv2_image_set_exif_string(Exiv2Image *img, char *key, char *value, Exiv2Error 
 
 	try {
 	    Exiv2::Exifdatum& tag = exifData[key];
-		Exiv2::Value::AutoPtr valueObject = Exiv2::Value::create(Exiv2::asciiString);
+		Exiv2ValuePtr valueObject = Exiv2::Value::create(Exiv2::asciiString);
 		valueObject->read(value);
 		tag.setValue(valueObject.get());
 
@@ -139,7 +149,7 @@ exiv2_image_set_exif_short(Exiv2Image *img, char *key, char *value, Exiv2Error *
 
 	try {
 		Exiv2::Exifdatum& tag = exifData[key];
-		Exiv2::Value::AutoPtr valueObject = Exiv2::Value::create(Exiv2::unsignedShort);
+		Exiv2ValuePtr valueObject = Exiv2::Value::create(Exiv2::unsignedShort);
 		valueObject->read(value);
 		tag.setValue(valueObject.get());
 
@@ -178,7 +188,7 @@ exiv2_image_set_iptc_short(Exiv2Image *img, char *key, char *value, Exiv2Error *
 
     try {
         Exiv2::Iptcdatum& tag = iptcData[key];
-        Exiv2::Value::AutoPtr valueObject = Exiv2::Value::create(Exiv2::unsignedShort);
+        Exiv2ValuePtr valueObject = Exiv2::Value::create(Exiv2::unsignedShort);
         valueObject->read(value);
         tag.setValue(valueObject.get());
 
